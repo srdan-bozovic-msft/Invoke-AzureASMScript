@@ -6,68 +6,8 @@ function Invoke-AzureASMScript
         [scriptblock]
         $ScriptBlock
     )
-    $context = Get-AzureRmContext
-    $subscriptionId = $context.Subscription.Id
-    $subscriptionName = $context.Subscription.Name
-    
-    if($null -eq $context.Subscription)
-    {
-        Write-Host "You need to login first." -ForegroundColor Red
-        return
-    }
 
-    try
-    {
-        $certificate = CreateTempAccessCertificate
-        $thumbprint = $certificate.Thumbprint
-        Write-Host "Temporary certificate created <$thumbprint>" -ForegroundColor Yellow
-        Write-Host
-
-        $certificateAdded = AddSubscriptionCertificate -certificate $certificate
-        Write-Host "Temporary certificate associated with subscription <$subscriptionId>" -ForegroundColor Yellow
-        Write-Host
-
-        Set-AzureSubscription -SubscriptionName $subscriptionName -Certificate $certificate -SubscriptionID $subscriptionId
-        Select-AzureSubscription -SubscriptionName $subscriptionName
-        Write-Host "Azure ASM context set." -ForegroundColor Yellow
-        Write-Host
-        
-        Write-Host "Running script." -ForegroundColor Cyan
-        Write-Host
-
-        . $ScriptBlock
-        
-        Write-Host
-        Write-Host "Script completed." -ForegroundColor Cyan
-        Write-Host
-
-    }
-    catch
-    {
-        if($null -eq $certificateAdded)
-        {
-            Write-Host "Certificate not added, check if you have proper permissions on subscription." -ForegroundColor Red
-        }
-        else
-        {
-            Write-Host $_.Exception.Message -ForegroundColor Red
-        }
-    }
-    finally
-    {
-        if($null -ne $certificate)
-        {
-            RemoveTempAccessCertificate -certificate $certificate
-            Write-Host "Temporary certificate deleted." -ForegroundColor Yellow
-        }
-        if($null -ne $certificateAdded)
-        {
-            DeleteSubscriptionCertificate -certificate $certificate
-            Write-Host "Temporary certificate dissasociated from subscription." -ForegroundColor Yellow
-        }
-    }
-
-    #local functions
+    #Begin local functions
 
     function CreateTempAccessCertificate 
     {
@@ -154,5 +94,68 @@ function Invoke-AzureASMScript
         $headers = GetAuthHeader
     
         Invoke-RestMethod -Uri $uri -Method Delete -Headers $headers
+    }
+
+    #End local functions
+
+    $context = Get-AzureRmContext
+    $subscriptionId = $context.Subscription.Id
+    $subscriptionName = $context.Subscription.Name
+    
+    if($null -eq $context.Subscription)
+    {
+        Write-Host "You need to login first." -ForegroundColor Red
+        return
+    }
+
+    try
+    {
+        $certificate = CreateTempAccessCertificate
+        $thumbprint = $certificate.Thumbprint
+        Write-Host "Temporary certificate created <$thumbprint>" -ForegroundColor Yellow
+        Write-Host
+
+        $certificateAdded = AddSubscriptionCertificate -certificate $certificate
+        Write-Host "Temporary certificate associated with subscription <$subscriptionId>" -ForegroundColor Yellow
+        Write-Host
+
+        Set-AzureSubscription -SubscriptionName $subscriptionName -Certificate $certificate -SubscriptionID $subscriptionId
+        Select-AzureSubscription -SubscriptionName $subscriptionName
+        Write-Host "Azure ASM context set." -ForegroundColor Yellow
+        Write-Host
+        
+        Write-Host "Running script." -ForegroundColor Cyan
+        Write-Host
+
+        . $ScriptBlock
+        
+        Write-Host
+        Write-Host "Script completed." -ForegroundColor Cyan
+        Write-Host
+
+    }
+    catch
+    {
+        if($null -eq $certificateAdded)
+        {
+            Write-Host "Certificate not added, check if you have proper permissions on subscription." -ForegroundColor Red
+        }
+        else
+        {
+            Write-Host $_.Exception.Message -ForegroundColor Red
+        }
+    }
+    finally
+    {
+        if($null -ne $certificate)
+        {
+            RemoveTempAccessCertificate -certificate $certificate
+            Write-Host "Temporary certificate deleted." -ForegroundColor Yellow
+        }
+        if($null -ne $certificateAdded)
+        {
+            DeleteSubscriptionCertificate -certificate $certificate
+            Write-Host "Temporary certificate dissasociated from subscription." -ForegroundColor Yellow
+        }
     }
 }
