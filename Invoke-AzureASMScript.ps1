@@ -68,8 +68,9 @@ function Invoke-AzureASMScript
         
         $context = Get-AzureRmContext
         $subscriptionId = $context.Subscription.Id
-    
-        $uri = "https://management.core.windows.net/$subscriptionId/certificates"        
+        $serviceManagementUrl = $context.Environment.ServiceManagementUrl
+        
+        $uri = $serviceManagementUrl + "$subscriptionId/certificates"        
     
         $headers = GetAuthHeader
     
@@ -88,8 +89,9 @@ function Invoke-AzureASMScript
         $context = Get-AzureRmContext
         $subscriptionId = $context.Subscription.Id
         $thumbprint = $certificate.Thumbprint
+        $serviceManagementUrl = $context.Environment.ServiceManagementUrl
     
-        $uri = "https://management.core.windows.net/$subscriptionId/certificates/$thumbprint"        
+        $uri = $serviceManagementUrl + "$subscriptionId/certificates/$thumbprint"        
     
         $headers = GetAuthHeader
     
@@ -101,6 +103,7 @@ function Invoke-AzureASMScript
     $context = Get-AzureRmContext
     $subscriptionId = $context.Subscription.Id
     $subscriptionName = $context.Subscription.Name
+    $environment = $context.Environment.Name
     
     if($null -eq $context.Subscription)
     {
@@ -119,8 +122,8 @@ function Invoke-AzureASMScript
         Write-Host "Temporary certificate associated with subscription <$subscriptionId>" -ForegroundColor Yellow
         Write-Host
 
-        Set-AzureSubscription -SubscriptionName $subscriptionName -Certificate $certificate -SubscriptionID $subscriptionId
-        Select-AzureSubscription -SubscriptionName $subscriptionName
+        Set-AzureSubscription -SubscriptionName $subscriptionName -Certificate $certificate -SubscriptionID $subscriptionId -Environment $environment
+        Select-AzureSubscription -SubscriptionName $subscriptionName 
         Write-Host "Azure ASM context set." -ForegroundColor Yellow
         Write-Host
         
@@ -139,6 +142,7 @@ function Invoke-AzureASMScript
         if($null -eq $certificateAdded)
         {
             Write-Host "Certificate not added, check if you have proper permissions on subscription." -ForegroundColor Red
+            Write-Host $_.Exception.Message -ForegroundColor Red
         }
         else
         {
